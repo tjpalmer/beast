@@ -3,6 +3,8 @@ use std.debug;
 // use @import("std").fmt;
 // use @import("std").io;
 const c = @cImport({
+  @cDefine("GL_GLEXT_PROTOTYPES", "");
+  @cInclude("GLES3/gl32.h");
   @cInclude("wchar.h");
   @cInclude("SDL.h");
 });
@@ -13,9 +15,11 @@ pub fn main() %void {
   warn("a\n");
   const sdl = try Sdl.init(); defer sdl.free();
   warn("b\n");
-  // try initGles3();
+  try initGles3();
   warn("c\n");
   const window = try Window.init(); defer window.free();
+  const _ = c.glGetString(c.GL_VERSION);
+  // puts(_);
   warn("d\n");
   var event = c.SDL_Event {.type = 0};
   warn("e\n");
@@ -82,6 +86,10 @@ const Window = struct {
 };
 
 fn initGles3() %void {
+  // if (c.SDL_SetHint(c.SDL_HINT_OPENGL_ES_DRIVER, c"1") == 0) {
+  //   warn("won't take a hint\n");
+  //   return error.SdlError;
+  // }
   if (c.SDL_GL_SetAttribute(
     c.SDL_GLattr(c.SDL_GL_CONTEXT_PROFILE_MASK),
     c.SDL_GL_CONTEXT_PROFILE_ES,
@@ -96,7 +104,7 @@ fn initGles3() %void {
     return error.SdlError;
   }
   if (c.SDL_GL_SetAttribute(
-    c.SDL_GLattr(c.SDL_GL_CONTEXT_MINOR_VERSION), 0,
+    c.SDL_GLattr(c.SDL_GL_CONTEXT_MINOR_VERSION), 2,
   ) != 0) {
     // puts(c.SDL_GetError() ?? return error.SdlError);
     return error.SdlError;
@@ -105,7 +113,7 @@ fn initGles3() %void {
 
 fn puts(str: &const u8) void {
   var i: usize = 0;
-  while (str[i] != 0) {  // && i < 10) {
+  while (str[i] != 0 and i < 10) {
     warn("{}", str[i]);
   }
   warn("\n");
