@@ -3,6 +3,9 @@ use std.debug;
 // use @import("std").fmt;
 // use @import("std").io;
 const c = @cImport({
+  // See https://github.com/zig-lang/zig/issues/515
+  // @cDefine("_NO_CRT_STDIO_INLINE", "1");
+  @cInclude("stdio.h");
   @cDefine("GL_GLEXT_PROTOTYPES", "");
   @cInclude("GLES3/gl32.h");
   @cInclude("wchar.h");
@@ -19,11 +22,10 @@ pub fn main() %void {
   // warn("c\n");
   const window = try Window.init(); defer window.free();
   const context = try Context.init(window); defer context.free();
+  puts(c.glGetString(c.GL_VERSION) ?? return error.SdlError);
   c.glClearColor(0, 0, 0, 1);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.SDL_GL_SwapWindow(window.window);
-  // const _ = c.glGetString(c.GL_VERSION);
-  // puts(_);
   // warn("d\n");
   var event = c.SDL_Event {.type = 0};
   // warn("e\n");
@@ -46,6 +48,7 @@ const Context = struct {
     if (c.SDL_GL_CreateContext(window.window)) |context| {
       return Context {.context = context};
     } else {
+      puts(c.SDL_GetError() ?? return error.SdlError);
       return error.ContextInit;
     }
   }
@@ -131,7 +134,7 @@ fn initGles3() %void {
     return error.SdlError;
   }
   if (c.SDL_GL_SetAttribute(
-    c.SDL_GLattr(c.SDL_GL_CONTEXT_MINOR_VERSION), 2,
+    c.SDL_GLattr(c.SDL_GL_CONTEXT_MINOR_VERSION), 1,
   ) != 0) {
     // puts(c.SDL_GetError() ?? return error.SdlError);
     return error.SdlError;
@@ -139,9 +142,8 @@ fn initGles3() %void {
 }
 
 fn puts(str: &const u8) void {
-  var i: usize = 0;
-  while (str[i] != 0 and i < 10) {
-    warn("{}", str[i]);
-  }
-  warn("\n");
+  // Ignoring result for now, since this is low priority here.
+  const _ = c.puts(str);
+  // const _ = c.printf(c"%s\n", str);
+  // c.fflush(c.stdout);
 }
