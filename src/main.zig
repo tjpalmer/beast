@@ -29,10 +29,23 @@ pub fn main() %void {
   // warn("d\n");
   var event = c.SDL_Event {.type = 0};
   // warn("e\n");
-  main: while (true) {
+  var done = false;
+  main: while (!done) {
     while (c.SDL_PollEvent(&event) != 0) {
-      if (event.type == u32(c.SDL_QUIT)) {
-        break :main;
+      switch (c_int(event.type)) {
+        c.SDL_QUIT => {
+          done = true;
+        },
+        c.SDL_WINDOWEVENT => switch (event.window.event) {
+          c.SDL_WINDOWEVENT_RESIZED => {
+            warn("Resize\n");
+            c.glClearColor(0, 0, 0, 1);
+            c.glClear(c.GL_COLOR_BUFFER_BIT);
+            c.SDL_GL_SwapWindow(window.window);
+          },
+          else => {}
+        },
+        else => {}
       }
     }
   }
