@@ -12,17 +12,21 @@ const c = @cImport({
 // Main.
 
 pub fn main() %void {
-  warn("a\n");
+  // warn("a\n");
   const sdl = try Sdl.init(); defer sdl.free();
-  warn("b\n");
+  // warn("b\n");
   try initGles3();
-  warn("c\n");
+  // warn("c\n");
   const window = try Window.init(); defer window.free();
-  const _ = c.glGetString(c.GL_VERSION);
+  const context = try Context.init(window); defer context.free();
+  c.glClearColor(0, 0, 0, 1);
+  c.glClear(c.GL_COLOR_BUFFER_BIT);
+  c.SDL_GL_SwapWindow(window.window);
+  // const _ = c.glGetString(c.GL_VERSION);
   // puts(_);
-  warn("d\n");
+  // warn("d\n");
   var event = c.SDL_Event {.type = 0};
-  warn("e\n");
+  // warn("e\n");
   main: while (true) {
     while (c.SDL_PollEvent(&event) != 0) {
       if (event.type == u32(c.SDL_QUIT)) {
@@ -33,6 +37,24 @@ pub fn main() %void {
 }
 
 // Support.
+
+const Context = struct {
+
+  context: c.SDL_GLContext,
+
+  fn init(window: &const Window) %Context {
+    if (c.SDL_GL_CreateContext(window.window)) |context| {
+      return Context {.context = context};
+    } else {
+      return error.ContextInit;
+    }
+  }
+
+  pub fn free(self: &const Context) void {
+    c.SDL_GL_DeleteContext(self.context);
+  }
+
+};
 
 const Sdl = struct {
 
@@ -55,6 +77,7 @@ const Sdl = struct {
 
 };
 
+error ContextInit;
 error SdlError;
 
 // Normally a macro, so we need to define it manually.
@@ -69,7 +92,11 @@ const Window = struct {
       c"Beast",
       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
       800, 600,
-      u32(c.SDL_WINDOW_MAXIMIZED | c.SDL_WINDOW_OPENGL),
+      u32(
+        // c.SDL_WINDOW_MAXIMIZED |
+        c.SDL_WINDOW_OPENGL |
+        c.SDL_WINDOW_RESIZABLE
+      ),
     )) |window| {
       return Window {.window = window};
     } else {
