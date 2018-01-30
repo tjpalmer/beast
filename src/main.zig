@@ -7,7 +7,7 @@ const c = @cImport({
   // @cDefine("_NO_CRT_STDIO_INLINE", "1");
   @cInclude("stdio.h");
   @cDefine("GL_GLEXT_PROTOTYPES", "");
-  @cInclude("GLES3/gl32.h");
+  @cInclude("GLES3/gl3.h");
   @cInclude("wchar.h");
   @cInclude("SDL.h");
 });
@@ -133,12 +133,14 @@ fn initGles3() %void {
     // puts(c.SDL_GetError() ?? return error.SdlError);
     return error.SdlError;
   }
-  if (c.SDL_GL_SetAttribute(
-    c.SDL_GLattr(c.SDL_GL_CONTEXT_MINOR_VERSION), 1,
-  ) != 0) {
-    // puts(c.SDL_GetError() ?? return error.SdlError);
-    return error.SdlError;
-  }
+  // ANGLE doesn't claim to support 3.1 yet on desktop gl, but asking for 3.0
+  // here also fails for me at the moment, so just don't say.
+  // if (c.SDL_GL_SetAttribute(
+  //   c.SDL_GLattr(c.SDL_GL_CONTEXT_MINOR_VERSION), 1,
+  // ) != 0) {
+  //   // puts(c.SDL_GetError() ?? return error.SdlError);
+  //   return error.SdlError;
+  // }
 }
 
 fn puts(str: &const u8) void {
