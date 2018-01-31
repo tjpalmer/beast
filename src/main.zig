@@ -54,6 +54,7 @@ pub fn main() %void {
 
 // Support.
 
+error CompileShader;
 error CreateProgram;
 error InitContext;
 error SdlError;
@@ -120,18 +121,21 @@ const Shader = struct {
 
   shader: c.GLuint,
 
-  fn init(shader_type: c_uint, comptime source: []const u8) %Shader {
+  fn init(shader_type: c_uint, source: []const u8) %Shader {
+    // Create.
     var shader = c.glCreateShader(shader_type);
+    // Compile.
     const sources: ?&const u8 = &source[0];
     const sizes = c.GLint(source.len);
     c.glShaderSource(shader, 1, &sources, &sizes);
-    // let {gl} = this;
-    // let shader = gl.createShader(type);
-    // gl.shaderSource(shader, source);
-    // gl.compileShader(shader);
-    // // console.log(source);
-    // // console.log(gl.getShaderInfoLog(shader));
-    // return shader!;
+    c.glCompileShader(shader);
+    // Check.
+    var is_compiled: c.GLint = 0;
+    c.glGetShaderiv(shader, c.GL_COMPILE_STATUS, &is_compiled);
+    if (is_compiled == 0) return error.CompileShader;
+    // console.log(source);
+    // console.log(gl.getShaderInfoLog(shader));
+    // All done.
     return Shader {.shader = shader};
   }
 
