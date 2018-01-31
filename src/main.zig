@@ -1,14 +1,7 @@
 use @import("./gfx.zig");
-const std = @import("std");
-use std.debug;
-// use @import("std").fmt;
-// use @import("std").io;
+use @import("./ui.zig");
+use @import("std").debug;
 const c = @cImport({
-  // See https://github.com/zig-lang/zig/issues/515
-  // @cDefine("_NO_CRT_STDIO_INLINE", "1");
-  @cInclude("stdio.h");
-  @cDefine("GL_GLEXT_PROTOTYPES", "");
-  @cInclude("GLES3/gl3.h");
   @cInclude("wchar.h");
   @cInclude("SDL.h");
 });
@@ -23,11 +16,8 @@ pub fn main() %void {
   // warn("c\n");
   const window = try Window.init(); defer window.free();
   const context = try Context.init(window); defer context.free();
-  puts(c.glGetString(c.GL_VERSION) ?? return error.SdlError);
-  c.glClearColor(0, 0, 0, 1);
-  c.glClear(c.GL_COLOR_BUFFER_BIT);
-  window.swap();
   const scene = try Scene.init(); defer scene.free();
+  paint(window);
   // warn("d\n");
   var event = c.SDL_Event {.type = 0};
   // warn("e\n");
@@ -41,9 +31,7 @@ pub fn main() %void {
         c.SDL_WINDOWEVENT => switch (event.window.event) {
           c.SDL_WINDOWEVENT_RESIZED => {
             warn("Resize\n");
-            c.glClearColor(0, 0, 0, 1);
-            c.glClear(c.GL_COLOR_BUFFER_BIT);
-            window.swap();
+            paint(window);
           },
           else => {}
         },
