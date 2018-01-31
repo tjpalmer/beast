@@ -26,6 +26,7 @@ pub fn main() %void {
   c.glClearColor(0, 0, 0, 1);
   c.glClear(c.GL_COLOR_BUFFER_BIT);
   c.SDL_GL_SwapWindow(window.window);
+  const scene = try Scene.init(); defer scene.free();
   // warn("d\n");
   var event = c.SDL_Event {.type = 0};
   // warn("e\n");
@@ -53,6 +54,10 @@ pub fn main() %void {
 
 // Support.
 
+error CreateProgram;
+error InitContext;
+error SdlError;
+
 const Context = struct {
 
   context: c.SDL_GLContext,
@@ -62,12 +67,30 @@ const Context = struct {
       return Context {.context = context};
     } else {
       puts(c.SDL_GetError() ?? return error.SdlError);
-      return error.ContextInit;
+      return error.InitContext;
     }
   }
 
   pub fn free(self: &const Context) void {
     c.SDL_GL_DeleteContext(self.context);
+  }
+
+};
+
+const Scene = struct {
+
+  vertex: Shader,
+
+  pub fn init() %Scene {
+    var program = c.glCreateProgram();
+    if (program == 0) return error.CreateProgram;
+    return Scene {
+      .vertex = try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl")),
+    };
+  }
+
+  pub fn free(self: &const Scene) void {
+    self.vertex.free();
   }
 
 };
@@ -93,8 +116,30 @@ const Sdl = struct {
 
 };
 
-error ContextInit;
-error SdlError;
+const Shader = struct {
+
+  shader: c.GLuint,
+
+  fn init(shader_type: c_uint, comptime source: []const u8) %Shader {
+    var shader = c.glCreateShader(shader_type);
+    const sources: ?&const u8 = &source[0];
+    const sizes = c.GLint(source.len);
+    c.glShaderSource(shader, 1, &sources, &sizes);
+    // let {gl} = this;
+    // let shader = gl.createShader(type);
+    // gl.shaderSource(shader, source);
+    // gl.compileShader(shader);
+    // // console.log(source);
+    // // console.log(gl.getShaderInfoLog(shader));
+    // return shader!;
+    return Shader {.shader = shader};
+  }
+
+  fn free(shader: &const Shader) void {
+    c.glDeleteShader(shader.shader);
+  }
+
+};
 
 // Normally a macro, so we need to define it manually.
 const SDL_WINDOWPOS_CENTERED: c_int = 0x2FFF0000;
