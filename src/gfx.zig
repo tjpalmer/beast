@@ -45,7 +45,7 @@ pub const Scene = struct {
     c.glLinkProgram(program);
     // Check.
     var is_linked: c.GLint = 0;
-    c.glGetShaderiv(program, c.GL_LINK_STATUS, &is_linked);
+    c.glGetProgramiv(program, c.GL_LINK_STATUS, &is_linked);
     if (is_linked == c.GL_FALSE) {
       var buffer = try Buffer.init(global_allocator, ""); defer buffer.deinit();
       var length: c.GLint = 0;
