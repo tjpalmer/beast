@@ -1,4 +1,7 @@
-use @import("std").debug;
+const std = @import("std");
+const Buffer = std.Buffer;
+use std.debug;
+use std.heap;
 use @import("./ui.zig");
 const c = @cImport({
   @cDefine("GL_GLEXT_PROTOTYPES", "");
@@ -8,22 +11,62 @@ const c = @cImport({
 error CompileShader;
 error CreateProgram;
 error InitContext;
+error LinkProgram;
 
 pub const Scene = struct {
+
+  fragment: Shader,
+
+  program: c.GLuint,
 
   vertex: Shader,
 
   pub fn init() %Scene {
-    puts(c.glGetString(c.GL_VERSION) ?? return error.SdlError);
-    var program = c.glCreateProgram();
-    if (program == 0) return error.CreateProgram;
-    return Scene {
-      .vertex = try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl")),
+    var scene = Scene {
+      .fragment = undefined,
+      .program = undefined,
+      .vertex = undefined,
     };
+    puts(??c.glGetString(c.GL_VERSION));
+    // Create program.
+    var program = c.glCreateProgram();
+    errdefer c.glDeleteProgram(program);
+    if (program == 0) return error.CreateProgram;
+    // Create shaders.
+    scene.fragment =
+      try Shader.init(c.GL_FRAGMENT_SHADER, @embedFile("fragment.glsl"));
+    errdefer scene.fragment.free();
+    scene.vertex =
+      try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl"));
+    errdefer scene.vertex.free();
+    // Link.
+    c.glAttachShader(program, scene.fragment.shader);
+    c.glAttachShader(program, scene.vertex.shader);
+    c.glLinkProgram(program);
+    // Check.
+    var is_linked: c.GLint = 0;
+    c.glGetShaderiv(program, c.GL_LINK_STATUS, &is_linked);
+    if (is_linked == c.GL_FALSE) {
+      var buffer = try Buffer.init(global_allocator, ""); defer buffer.deinit();
+      var length: c.GLint = 0;
+      c.glGetProgramiv(program, c.GL_INFO_LOG_LENGTH, &length);
+      // Given length includes the null character, so we don't need the extra in
+      // the buffer.
+      try buffer.resize(usize(length) - 1);
+      c.glGetProgramInfoLog(program, length, &length, buffer.ptr());
+      warn("{}: {}", length, buffer.toSlice());
+      return error.LinkProgram;
+    }
+    // Use and done.
+    c.glUseProgram(program);
+    scene.program = program;
+    return scene;
   }
 
   pub fn free(self: &const Scene) void {
     self.vertex.free();
+    self.fragment.free();
+    c.glDeleteProgram(self.program);
   }
 
 };
