@@ -17,15 +17,33 @@ pub const Program = struct {
 
   program: c.GLuint,
 
-  pub fn init(shaders: []const &const Shader) %Program {
-    // Create program.
+  pub fn init() %Program {
     var program = c.glCreateProgram();
     if (program == 0) return error.CreateProgram;
-    errdefer c.glDeleteProgram(program);
-    // Link.
-    for (shaders) |shader| {
-      c.glAttachShader(program, shader.shader);
-    }
+    return Program {.program = program};
+  }
+
+  fn deinit(self: &const Program) void {
+    c.glDeleteProgram(self.program);
+  }
+
+  fn apply(self: &const Program) void {
+    c.glUseProgram(self.program);
+  }
+
+  fn attach(self: &Program, shader: &const Shader) void {
+    c.glAttachShader(self.program, shader.shader);
+  }
+
+  fn bindAttrib(
+    self: &const Program, index: c.GLuint, comptime name: []const u8
+  ) void {
+    const c_name = name ++ "\x00";
+    c.glBindAttribLocation(self.program, index, &c_name[0]);
+  }
+
+  fn link(self: &Program) %void {
+    const program = self.program;
     c.glLinkProgram(program);
     // Check.
     var is_linked: c.GLint = 0;
@@ -41,20 +59,6 @@ pub const Program = struct {
       warn("{}: {}", length, buffer.toSlice());
       return error.LinkProgram;
     }
-    return Program {.program = program};
-  }
-
-  fn deinit(self: &const Program) void {
-    c.glDeleteProgram(self.program);
-  }
-
-  fn apply(self: &const Program) void {
-    c.glUseProgram(self.program);
-  }
-
-  fn attrib(self: &const Program, comptime name: []const u8) c.GLint {
-    const c_name = name ++ "\x00";
-    return c.glGetAttribLocation(self.program, &c_name[0]);
   }
 
 };
@@ -82,12 +86,12 @@ pub const Scene = struct {
       try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl"));
     errdefer scene.vertex.deinit();
     // Create and apply program.
-    const shaders = []&const Shader {scene.vertex, scene.fragment};
-    scene.program = try Program.init(shaders[0..]);
+    scene.program = try Program.init();
+    scene.program.bindAttrib(0, "position");
+    scene.program.attach(scene.vertex);
+    scene.program.attach(scene.fragment);
+    try scene.program.link();
     scene.program.apply();
-    // Attributes.
-    const positionAttrib = scene.program.attrib("position");
-    warn("positionAttrib: {}\n", positionAttrib);
     return scene;
   }
 
