@@ -24,7 +24,7 @@ pub const Context = struct {
     }
   }
 
-  pub fn free(self: &const Context) void {
+  pub fn deinit(self: &const Context) void {
     c.SDL_GL_DeleteContext(self.context);
   }
 
@@ -45,7 +45,7 @@ pub const Sdl = struct {
     return Sdl {};
   }
 
-  pub fn free(self: &const Sdl) void {
+  pub fn deinit(self: &const Sdl) void {
     c.SDL_Quit();
   }
 
@@ -74,7 +74,7 @@ pub const Window = struct {
     }
   }
 
-  pub fn free(self: &const Window) void {
+  pub fn deinit(self: &const Window) void {
     c.SDL_DestroyWindow(self.window);
   }
 

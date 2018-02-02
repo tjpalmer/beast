@@ -72,10 +72,10 @@ pub const Scene = struct {
     // Create shaders.
     scene.fragment =
       try Shader.init(c.GL_FRAGMENT_SHADER, @embedFile("fragment.glsl"));
-    errdefer scene.fragment.free();
+    errdefer scene.fragment.deinit();
     scene.vertex =
       try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl"));
-    errdefer scene.vertex.free();
+    errdefer scene.vertex.deinit();
     // Create and apply program.
     const shaders = []&const Shader {scene.vertex, scene.fragment};
     scene.program = try Program.init(shaders[0..]);
@@ -83,9 +83,9 @@ pub const Scene = struct {
     return scene;
   }
 
-  pub fn free(self: &const Scene) void {
-    self.vertex.free();
-    self.fragment.free();
+  pub fn deinit(self: &const Scene) void {
+    self.vertex.deinit();
+    self.fragment.deinit();
     self.program.deinit();
   }
 
@@ -113,7 +113,7 @@ pub const Shader = struct {
     return Shader {.shader = shader};
   }
 
-  fn free(shader: &const Shader) void {
+  fn deinit(shader: &const Shader) void {
     c.glDeleteShader(shader.shader);
   }
 

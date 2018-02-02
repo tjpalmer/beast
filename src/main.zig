@@ -10,13 +10,13 @@ const c = @cImport({
 
 pub fn main() %void {
   // warn("a\n");
-  const sdl = try Sdl.init(); defer sdl.free();
+  const sdl = try Sdl.init(); defer sdl.deinit();
   // warn("b\n");
   try initGles3();
   // warn("c\n");
-  const window = try Window.init(); defer window.free();
-  const context = try Context.init(window); defer context.free();
-  const scene = try Scene.init(); defer scene.free();
+  const window = try Window.init(); defer window.deinit();
+  const context = try Context.init(window); defer context.deinit();
+  const scene = try Scene.init(); defer scene.deinit();
   paint(window);
   // warn("d\n");
   var event = c.SDL_Event {.type = 0};
