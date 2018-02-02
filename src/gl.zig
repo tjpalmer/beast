@@ -1,8 +1,7 @@
+use @import("./ui.zig");
 const std = @import("std");
 const Buffer = std.Buffer;
 use std.debug;
-use std.heap;
-use @import("./ui.zig");
 const c = @cImport({
     @cDefine("GL_GLEXT_PROTOTYPES", "");
     @cInclude("GLES3/gl3.h");
@@ -13,11 +12,16 @@ error CreateProgram;
 error InitContext;
 error LinkProgram;
 
+pub const BufferBit = struct {
+    const Color = c.GL_COLOR_BUFFER_BIT;
+};
+
 pub const Program = struct {
 
     program: c.GLuint,
 
     pub fn init() %Program {
+        puts(??c.glGetString(c.GL_VERSION));
         var program = c.glCreateProgram();
         if (program == 0) return error.CreateProgram;
         return Program {.program = program};
@@ -64,46 +68,6 @@ pub const Program = struct {
 
 };
 
-pub const Scene = struct {
-
-    fragment: Shader,
-
-    program: Program,
-
-    vertex: Shader,
-
-    pub fn init() %Scene {
-        var scene = Scene {
-            .fragment = undefined,
-            .program = undefined,
-            .vertex = undefined,
-        };
-        puts(??c.glGetString(c.GL_VERSION));
-        // Create shaders.
-        scene.fragment =
-            try Shader.init(c.GL_FRAGMENT_SHADER, @embedFile("fragment.glsl"));
-        errdefer scene.fragment.deinit();
-        scene.vertex =
-            try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl"));
-        errdefer scene.vertex.deinit();
-        // Create and apply program.
-        scene.program = try Program.init();
-        scene.program.bindAttrib(0, "position");
-        scene.program.attach(scene.vertex);
-        scene.program.attach(scene.fragment);
-        try scene.program.link();
-        scene.program.apply();
-        return scene;
-    }
-
-    pub fn deinit(self: &const Scene) void {
-        self.vertex.deinit();
-        self.fragment.deinit();
-        self.program.deinit();
-    }
-
-};
-
 pub const Shader = struct {
 
     shader: c.GLuint,
@@ -132,8 +96,10 @@ pub const Shader = struct {
 
 };
 
-pub fn paint(window: &const Window) void {
-    c.glClearColor(0, 0, 0, 1);
-    c.glClear(c.GL_COLOR_BUFFER_BIT);
-    window.swap();
-}
+pub const ShaderKind = struct {
+    const Fragment = c.GL_FRAGMENT_SHADER;
+    const Vertex = c.GL_VERTEX_SHADER;
+};
+
+pub const clear = c.glClear;
+pub const clearColor = c.glClearColor;

@@ -1,4 +1,4 @@
-use @import("./gfx.zig");
+use @import("./scene.zig");
 use @import("./ui.zig");
 use @import("std").debug;
 const c = @cImport({
