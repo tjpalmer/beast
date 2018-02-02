@@ -13,35 +13,19 @@ error CreateProgram;
 error InitContext;
 error LinkProgram;
 
-pub const Scene = struct {
-
-  fragment: Shader,
+pub const Program = struct {
 
   program: c.GLuint,
 
-  vertex: Shader,
-
-  pub fn init() %Scene {
-    var scene = Scene {
-      .fragment = undefined,
-      .program = undefined,
-      .vertex = undefined,
-    };
-    puts(??c.glGetString(c.GL_VERSION));
+  pub fn init(shaders: []const &const Shader) %Program {
     // Create program.
     var program = c.glCreateProgram();
-    errdefer c.glDeleteProgram(program);
     if (program == 0) return error.CreateProgram;
-    // Create shaders.
-    scene.fragment =
-      try Shader.init(c.GL_FRAGMENT_SHADER, @embedFile("fragment.glsl"));
-    errdefer scene.fragment.free();
-    scene.vertex =
-      try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl"));
-    errdefer scene.vertex.free();
+    errdefer c.glDeleteProgram(program);
     // Link.
-    c.glAttachShader(program, scene.fragment.shader);
-    c.glAttachShader(program, scene.vertex.shader);
+    for (shaders) |shader| {
+      c.glAttachShader(program, shader.shader);
+    }
     c.glLinkProgram(program);
     // Check.
     var is_linked: c.GLint = 0;
@@ -57,16 +41,52 @@ pub const Scene = struct {
       warn("{}: {}", length, buffer.toSlice());
       return error.LinkProgram;
     }
-    // Use and done.
-    c.glUseProgram(program);
-    scene.program = program;
+    return Program {.program = program};
+  }
+
+  fn deinit(self: &const Program) void {
+    c.glDeleteProgram(self.program);
+  }
+
+  fn apply(self: &const Program) void {
+    c.glUseProgram(self.program);
+  }
+
+};
+
+pub const Scene = struct {
+
+  fragment: Shader,
+
+  program: Program,
+
+  vertex: Shader,
+
+  pub fn init() %Scene {
+    var scene = Scene {
+      .fragment = undefined,
+      .program = undefined,
+      .vertex = undefined,
+    };
+    puts(??c.glGetString(c.GL_VERSION));
+    // Create shaders.
+    scene.fragment =
+      try Shader.init(c.GL_FRAGMENT_SHADER, @embedFile("fragment.glsl"));
+    errdefer scene.fragment.free();
+    scene.vertex =
+      try Shader.init(c.GL_VERTEX_SHADER, @embedFile("vertex.glsl"));
+    errdefer scene.vertex.free();
+    // Create and apply program.
+    const shaders = []&const Shader {scene.vertex, scene.fragment};
+    scene.program = try Program.init(shaders[0..]);
+    scene.program.apply();
     return scene;
   }
 
   pub fn free(self: &const Scene) void {
     self.vertex.free();
     self.fragment.free();
-    c.glDeleteProgram(self.program);
+    self.program.deinit();
   }
 
 };
