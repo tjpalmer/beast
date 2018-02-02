@@ -52,6 +52,11 @@ pub const Program = struct {
     c.glUseProgram(self.program);
   }
 
+  fn attrib(self: &const Program, comptime name: []const u8) c.GLint {
+    const c_name = name ++ "\x00";
+    return c.glGetAttribLocation(self.program, &c_name[0]);
+  }
+
 };
 
 pub const Scene = struct {
@@ -80,6 +85,9 @@ pub const Scene = struct {
     const shaders = []&const Shader {scene.vertex, scene.fragment};
     scene.program = try Program.init(shaders[0..]);
     scene.program.apply();
+    // Attributes.
+    const positionAttrib = scene.program.attrib("position");
+    warn("positionAttrib: {}\n", positionAttrib);
     return scene;
   }
 
