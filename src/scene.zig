@@ -6,9 +6,15 @@ error CreateProgram;
 error InitContext;
 error LinkProgram;
 
+const Attrib = struct {
+    const Position = 0;
+};
+
 pub const Scene = struct {
 
     fragment: Shader,
+
+    position: Buffer,
 
     program: Program,
 
@@ -17,6 +23,7 @@ pub const Scene = struct {
     pub fn init() %Scene {
         var scene = Scene {
             .fragment = undefined,
+            .position = undefined,
             .program = undefined,
             .vertex = undefined,
         };
@@ -29,12 +36,15 @@ pub const Scene = struct {
         errdefer scene.vertex.deinit();
         // Build program.
         scene.program = try Program.init();
-        scene.program.bindAttrib(0, "position");
+        scene.program.bindAttrib(Attrib.Position, "position");
         scene.program.attach(scene.vertex);
         scene.program.attach(scene.fragment);
         // Link and apply.
         try scene.program.link();
         scene.program.apply();
+        // Buffers.
+        enableVertexAttribArray(Attrib.Position);
+        scene.position = Buffer.init(BufferTarget.Array);
         return scene;
     }
 

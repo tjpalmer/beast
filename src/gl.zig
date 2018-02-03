@@ -1,6 +1,5 @@
 use @import("./ui.zig");
 const std = @import("std");
-const Buffer = std.Buffer;
 use std.debug;
 const c = @cImport({
     @cDefine("GL_GLEXT_PROTOTYPES", "");
@@ -12,8 +11,31 @@ error CreateProgram;
 error InitContext;
 error LinkProgram;
 
+pub const Buffer = struct {
+
+    buffer: c.GLuint,
+
+    target: c.GLenum,
+
+    pub fn init(target: c.GLenum) Buffer {
+        var buffer: c.GLuint = undefined;
+        c.glGenBuffers(1, &buffer);
+        c.glBindBuffer(target, buffer);
+        return Buffer {.buffer = buffer, .target = target};
+    }
+
+    pub fn deinit(self: &const Buffer) void {
+        c.glDeleteBuffers(1, &self.buffer);
+    }
+
+};
+
 pub const BufferBit = struct {
     const Color = c.GL_COLOR_BUFFER_BIT;
+};
+
+pub const BufferTarget = struct {
+    const Array = c.GL_ARRAY_BUFFER;
 };
 
 pub const Program = struct {
@@ -53,7 +75,7 @@ pub const Program = struct {
         var is_linked: c.GLint = 0;
         c.glGetProgramiv(program, c.GL_LINK_STATUS, &is_linked);
         if (is_linked == c.GL_FALSE) {
-            var buffer = try Buffer.init(global_allocator, "");
+            var buffer = try std.Buffer.init(global_allocator, "");
             defer buffer.deinit();
             var length: c.GLint = 0;
             c.glGetProgramiv(program, c.GL_INFO_LOG_LENGTH, &length);
@@ -103,3 +125,4 @@ pub const ShaderKind = struct {
 
 pub const clear = c.glClear;
 pub const clearColor = c.glClearColor;
+pub const enableVertexAttribArray = c.glEnableVertexAttribArray;
