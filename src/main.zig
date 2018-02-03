@@ -17,7 +17,7 @@ pub fn main() %void {
     const window = try Window.init(); defer window.deinit();
     const context = try Context.init(window); defer context.deinit();
     const scene = try Scene.init(); defer scene.deinit();
-    paint(window);
+    scene.paint(window);
     // warn("d\n");
     var event = c.SDL_Event {.type = 0};
     // warn("e\n");
@@ -31,7 +31,7 @@ pub fn main() %void {
                 c.SDL_WINDOWEVENT => switch (event.window.event) {
                     c.SDL_WINDOWEVENT_RESIZED => {
                         warn("Resize\n");
-                        paint(window);
+                        scene.paint(window);
                     },
                     else => {}
                 },

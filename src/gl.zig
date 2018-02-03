@@ -20,12 +20,28 @@ pub const Buffer = struct {
     pub fn init(target: c.GLenum) Buffer {
         var buffer: c.GLuint = undefined;
         c.glGenBuffers(1, &buffer);
-        c.glBindBuffer(target, buffer);
-        return Buffer {.buffer = buffer, .target = target};
+        var buffer_struct = Buffer {.buffer = buffer, .target = target};
+        buffer_struct.bind();
+        return buffer_struct;
     }
 
     pub fn deinit(self: &const Buffer) void {
         c.glDeleteBuffers(1, &self.buffer);
+    }
+
+    pub fn bind(self: &const Buffer) void {
+        c.glBindBuffer(self.target, self.buffer);
+    }
+
+    pub fn bufferData(
+        self: &Buffer, comptime Item: type, data: []const Item, usage: c.GLenum,
+    ) void {
+        c.glBufferData(
+            self.target,
+            c.GLsizeiptr(data.len * @sizeOf(Item)),
+            @ptrCast(?&const c.GLvoid, &data[0]),
+            usage,
+        );
     }
 
 };
@@ -123,6 +139,12 @@ pub const ShaderKind = struct {
     const Vertex = c.GL_VERTEX_SHADER;
 };
 
+pub const Usage = struct {
+    const StaticDraw = c.GL_STATIC_DRAW;
+    const StreamDraw = c.GL_STREAM_DRAW;
+};
+
 pub const clear = c.glClear;
 pub const clearColor = c.glClearColor;
 pub const enableVertexAttribArray = c.glEnableVertexAttribArray;
+pub const vertexAttribPointer = c.glVertexAttribPointer;

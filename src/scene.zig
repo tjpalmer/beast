@@ -10,6 +10,12 @@ const Attrib = struct {
     const Position = 0;
 };
 
+const positions = []f32 {
+    -0.5, -0.5,
+    0.0, 0.5,
+    0.5, -0.5,
+};
+
 pub const Scene = struct {
 
     fragment: Shader,
@@ -45,6 +51,9 @@ pub const Scene = struct {
         // Buffers.
         enableVertexAttribArray(Attrib.Position);
         scene.position = Buffer.init(BufferTarget.Array);
+        scene.position.bufferData(f32, positions[0..], Usage.StaticDraw);
+        // TODO Abstract attrib struct for these things?
+        // vertexAttribPointer()
         return scene;
     }
 
@@ -54,10 +63,13 @@ pub const Scene = struct {
         self.program.deinit();
     }
 
-};
+    pub fn paint(self: &const Scene, window: &const Window) void {
+        clearColor(0, 0, 0, 1);
+        clear(BufferBit.Color);
+        self.position.bind();
+        // vertexAttribPointer
+        // drawArrays
+        window.swap();
+    }
 
-pub fn paint(window: &const Window) void {
-    clearColor(0, 0, 0, 1);
-    clear(BufferBit.Color);
-    window.swap();
-}
+};
