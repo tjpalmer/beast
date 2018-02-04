@@ -30,13 +30,13 @@ pub fn main() %void {
                 },
                 c.SDL_WINDOWEVENT => switch (event.window.event) {
                     c.SDL_WINDOWEVENT_RESIZED => {
-                        warn("Resize\n");
-                        scene.paint(window);
+                        // warn("Resize\n");
                     },
                     else => {}
                 },
                 else => {}
             }
         }
+        scene.paint(window);
     }
 }

@@ -64,17 +64,20 @@ pub const Scene = struct {
     }
 
     pub fn paint(self: &const Scene, window: &const Window) void {
-        // TODO Get correct viewport size.
+        // Adjust viewport.
         const size = window.drawableSize();
-        warn("size: [{}, {}]\n", size[0], size[1]);
+        // warn("size: [{}, {}]\n", size[0], size[1]);
         viewport(0, 0, size[0], size[1]);
+        // Clear.
         clearColor(0, 0, 0, 1);
         clear(BufferBit.Color);
+        // Draw.
         self.position.bind();
         vertexAttribPointer(
             Attrib.Position, 3, DataType.Float, u8(false), 0, bufferOffset(0),
         );
         drawArrays(DrawMode.Triangles, 0, 3);
+        // Swap.
         window.swap();
     }
 
