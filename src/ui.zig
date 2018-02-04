@@ -78,6 +78,13 @@ pub const Window = struct {
         c.SDL_DestroyWindow(self.window);
     }
 
+    pub fn drawableSize(self: &const Window) [2]c_int {
+        var x: c_int = undefined;
+        var y: c_int = undefined;
+        c.SDL_GL_GetDrawableSize(self.window, &x, &y);
+        return []c_int{x, y};
+    }
+
     pub fn swap(self: &const Window) void {
         c.SDL_GL_SwapWindow(self.window);
     }

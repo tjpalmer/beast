@@ -1,3 +1,4 @@
+const warn = @import("std").debug.warn;
 use @import("./gl.zig");
 use @import("./ui.zig");
 
@@ -11,9 +12,9 @@ const Attrib = struct {
 };
 
 const positions = []f32 {
-    -0.5, -0.5,
-    0.0, 0.5,
-    0.5, -0.5,
+    -0.5, -0.5, 0.0,
+    0.0, 0.5, 0.0,
+    0.5, -0.5, 0.0,
 };
 
 pub const Scene = struct {
@@ -48,12 +49,11 @@ pub const Scene = struct {
         // Link and apply.
         try scene.program.link();
         scene.program.apply();
-        // Buffers.
+        // Vertex buffers.
         enableVertexAttribArray(Attrib.Position);
         scene.position = Buffer.init(BufferTarget.Array);
         scene.position.bufferData(f32, positions[0..], Usage.StaticDraw);
-        // TODO Abstract attrib struct for these things?
-        // vertexAttribPointer()
+        // All done.
         return scene;
     }
 
@@ -64,11 +64,17 @@ pub const Scene = struct {
     }
 
     pub fn paint(self: &const Scene, window: &const Window) void {
+        // TODO Get correct viewport size.
+        const size = window.drawableSize();
+        warn("size: [{}, {}]\n", size[0], size[1]);
+        viewport(0, 0, size[0], size[1]);
         clearColor(0, 0, 0, 1);
         clear(BufferBit.Color);
         self.position.bind();
-        // vertexAttribPointer
-        // drawArrays
+        vertexAttribPointer(
+            Attrib.Position, 3, DataType.Float, u8(false), 0, bufferOffset(0),
+        );
+        drawArrays(DrawMode.Triangles, 0, 3);
         window.swap();
     }
 

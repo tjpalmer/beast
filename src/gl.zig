@@ -54,6 +54,14 @@ pub const BufferTarget = struct {
     const Array = c.GL_ARRAY_BUFFER;
 };
 
+pub const DataType = struct {
+    const Float = c.GL_FLOAT;
+};
+
+pub const DrawMode = struct {
+    const Triangles = c.GL_TRIANGLES;
+};
+
 pub const Program = struct {
 
     program: c.GLuint,
@@ -144,7 +152,13 @@ pub const Usage = struct {
     const StreamDraw = c.GL_STREAM_DRAW;
 };
 
+pub inline fn bufferOffset(offset: usize) &const c_void {
+    return @intToPtr(&const c_void, offset);
+}
+
 pub const clear = c.glClear;
 pub const clearColor = c.glClearColor;
+pub const drawArrays = c.glDrawArrays;
 pub const enableVertexAttribArray = c.glEnableVertexAttribArray;
 pub const vertexAttribPointer = c.glVertexAttribPointer;
+pub const viewport = c.glViewport;
