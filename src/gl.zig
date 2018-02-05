@@ -8,6 +8,7 @@ const c = @cImport({
 
 error CompileShader;
 error CreateProgram;
+error GetUniformLocation;
 error InitContext;
 error LinkProgram;
 
@@ -92,6 +93,15 @@ pub const Program = struct {
         c.glBindAttribLocation(self.program, index, &c_name[0]);
     }
 
+    fn getUniform(self: &const Program, comptime name: []const u8) %Uniform {
+        const c_name = name ++ "\x00";
+        const location = c.glGetUniformLocation(self.program, &c_name[0]);
+        if (location < 0) {
+            return error.GetUniformLocation;
+        }
+        return Uniform {.location = location};
+    }
+
     fn link(self: &Program) %void {
         const program = self.program;
         c.glLinkProgram(program);
@@ -145,6 +155,21 @@ pub const Shader = struct {
 pub const ShaderKind = struct {
     const Fragment = c.GL_FRAGMENT_SHADER;
     const Vertex = c.GL_VERTEX_SHADER;
+};
+
+pub const Uniform = struct {
+
+    location: c.GLint,
+
+    // TODO Define some of these in advance, including generic type?
+    fn matrix4fv(
+        self: &const Uniform, transpose: bool, value: []const f32,
+    ) void {
+        c.glUniformMatrix4fv(
+            self.location, 1, c.GLboolean(transpose), &value[0],
+        );
+    }
+
 };
 
 pub const Usage = struct {

@@ -27,12 +27,15 @@ pub const Scene = struct {
 
     vertex: Shader,
 
+    viewUniform: Uniform,
+
     pub fn init() %Scene {
         var scene = Scene {
             .fragment = undefined,
             .position = undefined,
             .program = undefined,
             .vertex = undefined,
+            .viewUniform = undefined,
         };
         // Create shaders.
         scene.fragment =
@@ -49,6 +52,8 @@ pub const Scene = struct {
         // Link and apply.
         try scene.program.link();
         scene.program.apply();
+        // Uniforms.
+        scene.viewUniform = try scene.program.getUniform("view");
         // Vertex buffers.
         enableVertexAttribArray(Attrib.Position);
         scene.position = Buffer.init(BufferTarget.Array);
@@ -68,9 +73,22 @@ pub const Scene = struct {
         const size = window.drawableSize();
         // warn("size: [{}, {}]\n", size[0], size[1]);
         viewport(0, 0, size[0], size[1]);
+        const ratios = if (size[0] < size[1]) x_smaller: {
+            break :x_smaller []f32{1, f32(size[0]) / f32(size[1])};
+        } else y_smaller: {
+            break :y_smaller []f32{f32(size[1]) / f32(size[0]), 1};
+        };
         // Clear.
         clearColor(0, 0, 0, 1);
         clear(BufferBit.Color);
+        // Uniforms.
+        const view = []f32{
+            ratios[0], 0, 0, 0,
+            0, ratios[1], 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1,
+        };
+        self.viewUniform.matrix4fv(true, view[0..]);
         // Draw.
         self.position.bind();
         vertexAttribPointer(
