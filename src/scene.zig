@@ -1,5 +1,6 @@
 const warn = @import("std").debug.warn;
 use @import("./gl.zig");
+use @import("./transform.zig");
 use @import("./ui.zig");
 
 error CompileShader;
@@ -16,6 +17,8 @@ const positions = []f32 {
     0.0, 0.5, 0.0,
     0.5, -0.5, 0.0,
 };
+
+const transform = T3.init();
 
 pub const Scene = struct {
 
@@ -83,7 +86,10 @@ pub const Scene = struct {
         clear(BufferBit.Color);
         // Uniforms.
         const view = []f32{
-            ratios[0], 0, 0, 0,
+            // Just hack in a wrong transform spot for now to make sure it's
+            // getting compiled in.
+            // TODO Correct use of transforms.
+            ratios[0], 0, 0, transform.values[0],
             0, ratios[1], 0, 0,
             0, 0, 1, 0,
             0, 0, 0, 1,
