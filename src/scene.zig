@@ -3,11 +3,6 @@ use @import("./gl.zig");
 use @import("./transform.zig");
 use @import("./ui.zig");
 
-error CompileShader;
-error CreateProgram;
-error InitContext;
-error LinkProgram;
-
 const Attrib = struct {
     const Position = 0;
 };
@@ -32,7 +27,7 @@ pub const Scene = struct {
 
     viewUniform: Uniform,
 
-    pub fn init() %Scene {
+    pub fn init() !Scene {
         var scene = Scene {
             .fragment = undefined,
             .position = undefined,

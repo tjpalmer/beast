@@ -8,7 +8,7 @@ const c = @cImport({
 
 // Main.
 
-pub fn main() %void {
+pub fn main() !void {
     // warn("a\n");
     const sdl = try Sdl.init(); defer sdl.deinit();
     // warn("b\n");

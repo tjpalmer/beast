@@ -6,11 +6,13 @@ const c = @cImport({
     @cInclude("GLES3/gl3.h");
 });
 
-error CompileShader;
-error CreateProgram;
-error GetUniformLocation;
-error InitContext;
-error LinkProgram;
+pub const GlError = error {
+    CompileShader,
+    CreateProgram,
+    GetUniformLocation,
+    InitContext,
+    LinkProgram,
+};
 
 pub const Buffer = struct {
 
@@ -67,10 +69,10 @@ pub const Program = struct {
 
     program: c.GLuint,
 
-    pub fn init() %Program {
+    pub fn init() !Program {
         puts(??c.glGetString(c.GL_VERSION));
         var program = c.glCreateProgram();
-        if (program == 0) return error.CreateProgram;
+        if (program == 0) return GlError.CreateProgram;
         return Program {.program = program};
     }
 
@@ -93,16 +95,16 @@ pub const Program = struct {
         c.glBindAttribLocation(self.program, index, &c_name[0]);
     }
 
-    fn getUniform(self: &const Program, comptime name: []const u8) %Uniform {
+    fn getUniform(self: &const Program, comptime name: []const u8) !Uniform {
         const c_name = name ++ "\x00";
         const location = c.glGetUniformLocation(self.program, &c_name[0]);
         if (location < 0) {
-            return error.GetUniformLocation;
+            return GlError.GetUniformLocation;
         }
         return Uniform {.location = location};
     }
 
-    fn link(self: &Program) %void {
+    fn link(self: &Program) !void {
         const program = self.program;
         c.glLinkProgram(program);
         // Check.
@@ -118,7 +120,7 @@ pub const Program = struct {
             try buffer.resize(usize(length) - 1);
             c.glGetProgramInfoLog(program, length, &length, buffer.ptr());
             warn("{}: {}", length, buffer.toSlice());
-            return error.LinkProgram;
+            return GlError.LinkProgram;
         }
     }
 
@@ -128,7 +130,7 @@ pub const Shader = struct {
 
     shader: c.GLuint,
 
-    fn init(shader_type: c_uint, source: []const u8) %Shader {
+    fn init(shader_type: c_uint, source: []const u8) !Shader {
         // Create.
         var shader = c.glCreateShader(shader_type);
         // Compile.
@@ -139,7 +141,7 @@ pub const Shader = struct {
         // Check.
         var is_compiled: c.GLint = 0;
         c.glGetShaderiv(shader, c.GL_COMPILE_STATUS, &is_compiled);
-        if (is_compiled == 0) return error.CompileShader;
+        if (is_compiled == 0) return GlError.CompileShader;
         // console.log(source);
         // console.log(gl.getShaderInfoLog(shader));
         // All done.

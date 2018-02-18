@@ -1,3 +1,4 @@
+use @import("./gl.zig");
 use @import("std").debug;
 const c = @cImport({
     // See https://github.com/zig-lang/zig/issues/515
@@ -9,18 +10,20 @@ const c = @cImport({
 // Normally a macro, so we need to define it manually?
 const SDL_WINDOWPOS_CENTERED: c_int = 0x2FFF0000;
 
-error SdlError;
+const UiError = error {
+    Sdl,
+};
 
 pub const Context = struct {
 
     context: c.SDL_GLContext,
 
-    fn init(window: &const Window) %Context {
+    fn init(window: &const Window) !Context {
         if (c.SDL_GL_CreateContext(window.window)) |context| {
             return Context {.context = context};
         } else {
             puts(c.SDL_GetError() ?? return error.SdlError);
-            return error.InitContext;
+            return GlError.InitContext;
         }
     }
 
@@ -32,7 +35,7 @@ pub const Context = struct {
 
 pub const Sdl = struct {
 
-    pub fn init() %Sdl {
+    pub fn init() !Sdl {
         var sdl_version = c.SDL_version {.major = 0, .minor = 0, .patch = 0};
         c.SDL_GetVersion(&sdl_version);
         warn(
@@ -40,7 +43,7 @@ pub const Sdl = struct {
             sdl_version.major, sdl_version.minor, sdl_version.patch
         );
         if (c.SDL_Init(c.SDL_INIT_VIDEO) != 0) {
-            return error.SdlError;
+            return UiError.Sdl;
         }
         return Sdl {};
     }
@@ -55,7 +58,7 @@ pub const Window = struct {
 
     window: &c.SDL_Window,
 
-    pub fn init() %Window {
+    pub fn init() !Window {
         if (c.SDL_CreateWindow(
             c"Beast",
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -70,7 +73,7 @@ pub const Window = struct {
         } else {
             warn("Hey!\n");
             // puts(c.SDL_GetError() ?? return error.SdlError);
-            return error.SdlError;
+            return UiError.Sdl;
         }
     }
 
@@ -91,7 +94,7 @@ pub const Window = struct {
 
 };
 
-pub fn initGles3() %void {
+pub fn initGles3() !void {
     // if (c.SDL_SetHint(c.SDL_HINT_OPENGL_ES_DRIVER, c"1") == 0) {
     //     warn("won't take a hint\n");
     //     return error.SdlError;
@@ -101,13 +104,13 @@ pub fn initGles3() %void {
         c.SDL_GL_CONTEXT_PROFILE_ES,
     ) != 0) {
         // puts(c.SDL_GetError() ?? return error.SdlError);
-        return error.SdlError;
+        return UiError.Sdl;
     }
     if (c.SDL_GL_SetAttribute(
         c.SDL_GLattr(c.SDL_GL_CONTEXT_MAJOR_VERSION), 3,
     ) != 0) {
         // puts(c.SDL_GetError() ?? return error.SdlError);
-        return error.SdlError;
+        return UiError.Sdl;
     }
     // ANGLE doesn't claim to support 3.1 yet on desktop gl, but asking for 3.0
     // here also fails for me at the moment, so just don't say.
